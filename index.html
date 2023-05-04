@@ -158,9 +158,23 @@
             labelContainer.appendChild(document.createElement("div"));
           }
 
+          // add stop camera button
+          const stopButton = document.createElement("button");
+          stopButton.innerHTML = "Stop Camera";
+          stopButton.onclick = stopCamera;
+          document.getElementById("label-container").appendChild(stopButton);
+
           webcam.play();
           window.requestAnimationFrame(loop);
 
+        }
+
+        function stopCamera() {
+          webcam.pause();
+          webcam.stop();
+          webcam.stream.getTracks()[0].stop(); // stop the webcam stream
+          webcam.srcObject = null; // release the webcam source
+          document.getElementById("webcam-container").style.display = "none"; // hide the webcam container
         }
 
         async function loop() {
@@ -178,11 +192,27 @@
           } else {
             prediction = await model.predict(webcam.canvas);
           }
+
+          let maxPredictionIndex = 0;
+          let maxPredictionScore = 0;
+
           for (let i = 0; i < maxPredictions; i++) {
-            const classPrediction =
-                prediction[i].className + ': ' + prediction[i].probability.toFixed(2);
-            labelContainer.childNodes[i].innerHTML = classPrediction;
+            const probability = prediction[i].probability.toFixed(2) * 100;
+            if (probability > maxPredictionScore) {
+              maxPredictionIndex = i;
+              maxPredictionScore = probability;
+            }
           }
+
+          const classPrediction = prediction[maxPredictionIndex].className;
+          const confidence = maxPredictionScore.toFixed(2);
+
+          labelContainer.childNodes[0].innerHTML = `${classPrediction}: ${confidence}%`;
+
+          return {
+            classPrediction,
+            confidence
+          };
         }
 
 </script>
